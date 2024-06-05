@@ -1,0 +1,3 @@
+*.odt
+.ipynb_checkpoints/
+__pycache__/
