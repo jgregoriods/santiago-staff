@@ -11,8 +11,8 @@ def plot_discourse(gl, x):
                 xcoords.append(i)
                 ycoords.append(y)
         y -= 1
-    fig, ax = plt.subplots()
-    ax.scatter(xcoords, ycoords, marker = "|", color="black")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.scatter(xcoords, ycoords, color='black', s=10)
     ax.set_xlim(0, len(x))
     ax.set_yticks(list(range(0,y,-1)), gl)
 

@@ -58,64 +58,40 @@ def draw_square_on_ax(start, end, ax, linewidth=1.2, color="black"):
     return ax
 
 
-def calculate_aic(n, mse, k):
-    return n * np.log(mse) + 2 * k
-
-
-def find_optimnal_bkps(vectorized_text, n_bkps_range):
-    X = vectorized_text.toarray()
-
-    n, d = X.shape
-
-    best_aic = float("inf")
-    best_n_bkps = None
-
-    for n_bkps in n_bkps_range:
-        try:
-            algo = rpt.Dynp(custom_cost=CosineCost(), min_size=1, jump=1).fit(X)
-            result = algo.predict(n_bkps=n_bkps)
-            n_segments = len(result) - 1
-
-            total_mse = 0
-            for i in range(n_segments):
-                start = result[i]
-                end = result[i+1]
-                segment = X[start:end]
-                segment_mse = np.mean(segment, axis=0)
-                total_mse += np.sum((segment - segment_mse) ** 2)
-
-            mse = total_mse / n
-
-            aic = calculate_aic(n, mse, n_segments)
-
-            if aic < best_aic:
-                best_aic = aic
-                best_n_bkps = n_bkps
-        except:
-            print(f"Could not run the algorithm for n_bkps={n_bkps}")
-
-    return best_n_bkps
-
-
 def plot_breakpoints(vectorized_text, n_bkps):
     """Plot the breakpoints of the given text."""
     X = vectorized_text.toarray()
-    algo = rpt.Dynp(custom_cost=CosineCost(), min_size=1, jump=1).fit(X)
-    predicted_bkps = algo.predict(n_bkps=n_bkps)
+    algo = rpt.Dynp(custom_cost=CosineCost(), min_size=1, jump=2).fit(X)
 
-    fig, ax = plt.subplots(figsize=(4,4))
+    num_cols = min(len(n_bkps), 2)
+    num_rows = (len(n_bkps) + num_cols - 1) // num_cols
 
-    # plot config
-    # title_fontsize = 10
-    # label_fontsize = 7
+    fig, axes = plt.subplots(num_rows, num_cols)
 
-    # plot gram matrix
-    ax.imshow(algo.cost.gram, cmap="viridis", norm=LogNorm(), interpolation="none")
-    # add text segmentation
-    for start, end in rpt.utils.pairwise([0] + predicted_bkps):
-        draw_square_on_ax(start=start, end=end, ax=ax)
-    # add labels and title
-    #ax.set_title(title, fontsize=title_fontsize)
+    if len(n_bkps) > 1:
+        axes = axes.flatten()
+    else:
+        axes = [axes]
+
+    res = []
+    for idx, n in enumerate(n_bkps):
+        predicted_bkps = algo.predict(n_bkps=n)
+        res.append(predicted_bkps)
+
+        title_fontsize = 16
+        ax = axes[idx]
+        ax.imshow(algo.cost.gram, cmap="viridis", norm=LogNorm(), interpolation="none")
+        for start, end in rpt.utils.pairwise([0] + predicted_bkps):
+            draw_square_on_ax(start=start, end=end, ax=ax, color="white")
+        ax.set_title(f"n={n}", fontsize=title_fontsize)
+        ax.set_xticks([i for i in range(X.shape[0])])
+        ax.set_xticklabels([i + 1 for i in range(X.shape[0])])
+        ax.set_yticks([i for i in range(X.shape[0])])
+        ax.set_yticklabels([i + 1 for i in range(X.shape[0])])
+        ax.set_xlabel("line")
+        ax.set_ylabel("line")
+
+    plt.tight_layout()
     plt.show()
 
-    return predicted_bkps
+    return res
