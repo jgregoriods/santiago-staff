@@ -6,8 +6,8 @@ def plot_discourse(gl, x):
     ycoords = []
     y = 0
     for glyph in gl:
-        for i in range(len(x)):
-            if x[i] == glyph:
+        for i in range(len(x) - len(glyph) + 1):
+            if x[i:i+len(glyph)] == glyph:
                 xcoords.append(i)
                 ycoords.append(y)
         y -= 1
