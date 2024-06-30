@@ -5,6 +5,26 @@ import ruptures as rpt
 from matplotlib.colors import LogNorm
 from ruptures.base import BaseCost
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+
+def vectorize(lines):
+    line_str = [' '.join(line) for line in lines]
+    vectorizer = TfidfVectorizer(analyzer="word", token_pattern = '[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
+    vectorized_text = vectorizer.fit_transform(line_str)
+    return vectorized_text, vectorizer
+
+
+def save_glyphs(vectorized_text, vectorizer, breakpoints):
+    feature_names = vectorizer.get_feature_names_out()
+    X = vectorized_text.toarray()
+    distinctive_glyphs = []
+    for bkpt in breakpoints:
+        indices = [0] + bkpt
+        for i in range(len(indices) - 1):
+            best_features = np.argmax(X[indices[i]:indices[i+1], :], axis=1)
+            distinctive_glyphs.append(feature_names[list(set(best_features))].tolist())
+    return distinctive_glyphs
 
 
 class CosineCost(BaseCost):
@@ -58,7 +78,7 @@ def draw_square_on_ax(start, end, ax, linewidth=1.2, color="black"):
     return ax
 
 
-def plot_breakpoints(vectorized_text, n_bkps):
+def plot_breakpoints(vectorized_text, n_bkps, save_path=None):
     """Plot the breakpoints of the given text."""
     X = vectorized_text.toarray()
     algo = rpt.Dynp(custom_cost=CosineCost(), min_size=1, jump=2).fit(X)
@@ -92,6 +112,10 @@ def plot_breakpoints(vectorized_text, n_bkps):
         ax.set_ylabel("line")
 
     plt.tight_layout()
-    plt.show()
+
+    if save_path is not None:
+        plt.savefig(save_path)
+    else:
+        plt.show()
 
     return res

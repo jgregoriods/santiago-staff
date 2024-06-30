@@ -1,27 +1,36 @@
 import matplotlib.pyplot as plt
 
 
-def plot_discourse(gl, x):
-    xcoords = []
-    ycoords = []
+def plot_discourse(glyphs, encoded_lines, bkpt=None, save_path=None):
+    x_coords = []
+    y_coords = []
     y = 0
-    for glyph in gl:
-        for i in range(len(x) - len(glyph) + 1):
-            if x[i:i+len(glyph)] == glyph:
-                xcoords.append(i)
-                ycoords.append(y)
+
+    text = []
+    for line in encoded_lines:
+        text.extend(line)
+
+    for glyph in glyphs:
+        for i in range(len(text) - len(glyph) + 1):
+            if text[i:i+len(glyph)] == glyph:
+                x_coords.append(i)
+                y_coords.append(y)
         y -= 1
+
     fig, ax = plt.subplots(figsize=(8, 6))
-    ax.scatter(xcoords, ycoords, color='black', s=10)
-    ax.set_xlim(0, len(x))
-    ax.set_yticks(list(range(0,y,-1)), gl)
+    ax.scatter(x_coords, y_coords, color='black', s=10)
+    ax.set_xlim(0, len(text))
+    ax.set_yticks(range(0, y, -1))
+    ax.set_yticklabels([' '.join(glyph) for glyph in glyphs])
+    ax.set_xlabel('Position in Text')
+    ax.set_ylabel('Glyph')
 
+    if bkpt is not None:
+        break_x = sum([len(line) for line in encoded_lines[:bkpt]])
+        ax.axvspan(break_x, len(text), color='gray', alpha=0.1)
 
-def glyph_bound(glyph, text):
-    start = end = None
-    for i in range(len(text)):
-        if glyph in text[i]:
-            if start is None:
-                start = i
-            end = i
-    return (start, end)
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight')
+    else:
+        plt.show()
+

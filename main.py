@@ -1,108 +1,51 @@
-from horley_encoding import convert_to_horley
-from nltk.collocations import BigramAssocMeasures, BigramCollocationFinder, TrigramAssocMeasures, TrigramCollocationFinder
-from nltk.lm.preprocessing import pad_both_ends
-from sklearn.feature_extraction.text import TfidfVectorizer
-from cosine_cost import CosineCost, plot_breakpoints
+import os
+import json
+from segmentation import vectorize, save_glyphs, plot_breakpoints
+from collocations import get_bigram_collocations, get_trigram_collocations, get_similar_glyphs
+from processing import load_file, clean_lines, encode_lines, split_sequences
+from nearest_neighbor import analyze_glyphs
+from discourse import plot_discourse
+from search import search_glyphs
 
 
-def load_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        raw_data = [line.split(',')[1][:-1] for line in file.readlines()]
-    return raw_data
+RESULTS_DIR = 'results'
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
-def clean_line(line):
-    replacements = {
-        "(": "",
-        ")": "",
-        "128": "001V.076",
-        "999": "",
-        ".076.": ".076-",
-        "-022h-": "-"
-    }
-    for old, new in replacements.items():
-        line = line.replace(old, new)
-    return line.split('-')
-
-
-def clean_lines(lines):
-    return [clean_line(line) for line in lines]
-
-
-def encode_lines(lines):
-    return [[convert_to_horley(glyph) for glyph in line] for line in lines]
-
-
-def split_sequences(lines):
-    sequences = []
-
-    for line in lines:
-        i = 0
-        j = 1
-        while j < len(line):
-            if line[j][-3:] == '.76':
-                sequences.append(line[i:j])
-                i = j
-            j += 1
-
-    # We will add a special token to represent glyph 076
-    # when appended to the first glyph of the triad
-
-    for i, sequence in enumerate(sequences):
-        sequence[0] = sequence[0][:-3]
-        sequence.insert(1, '<76>')
-
-    sequences = [sequence for sequence in sequences if len(sequence) >= 4 and sequence[0] and '?' not in sequence]
-
-    return sequences
-
-
-def bigram_collocations(sequences):
-    padded = [list(pad_both_ends(sequence, 2)) for sequence in sequences]
-    bigram_measures = BigramAssocMeasures()
-
-    finder = BigramCollocationFinder.from_documents(padded)
-    finder.apply_freq_filter(2)
-    finder.apply_ngram_filter(lambda *w: w[1] != '<76>' or w[0] == '?')
-    print(finder.score_ngrams(bigram_measures.likelihood_ratio)[:10])
-
-    finder = BigramCollocationFinder.from_documents(padded)
-    finder.apply_freq_filter(2)
-    finder.apply_ngram_filter(lambda *w: w[0] != '<76>')
-    print(finder.score_ngrams(bigram_measures.likelihood_ratio)[:10])
-
-    finder = BigramCollocationFinder.from_documents(padded)
-    finder.apply_freq_filter(2)
-    finder.apply_ngram_filter(lambda *w: w[-1] != '</s>')
-    print(finder.score_ngrams(bigram_measures.likelihood_ratio)[:10])
-
-
-def trigram_collocations(sequences):
-    padded = [list(pad_both_ends(sequence, 3)) for sequence in sequences]
-    trigram_measures = TrigramAssocMeasures()
-
-    finder = TrigramCollocationFinder.from_documents(padded)
-    finder.apply_freq_filter(2)
-    finder.apply_ngram_filter(lambda *w: w[1] != '<76>' or w[0] == '?')
-    print(finder.score_ngrams(trigram_measures.likelihood_ratio)[:10])
-
-
-def vectorize(lines):
-    line_str = [' '.join(line) for line in lines]
-    vectorizer = TfidfVectorizer(analyzer="word", token_pattern = '[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
-    vectorized_text = vectorizer.fit_transform(line_str)
-    return vectorized_text
+def save_json(data, file_name):
+    with open(os.path.join(RESULTS_DIR, file_name), 'w', encoding='utf-8') as file:
+        json.dump(data, file, indent=4)
 
 
 def main():
-    raw_data_I = load_file('data/I.csv')
-    clean_data_I = clean_lines(raw_data_I)
-    encoded_data_I = encode_lines(clean_data_I)
-    sequences_I = split_sequences(encoded_data_I)
-    bigram_collocations(sequences_I)
-    trigram_collocations(sequences_I)
-    vectorized_text_I = vectorize(encoded_data_I)
-    bkpts = plot_breakpoints(vectorized_text_I, [1, 2])
+    for text in ['I', 'Gv']:
+        os.makedirs(os.path.join(RESULTS_DIR, text), exist_ok=True)
+        raw_data = load_file(f'data/{text}.csv')
+        clean_data = clean_lines(raw_data)
+        encoded_data = encode_lines(clean_data)
+        sequences = split_sequences(encoded_data)
+
+        bigrams = get_bigram_collocations(sequences)
+        save_json(bigrams, f'{text}/bigrams.json')
+
+        trigrams = get_trigram_collocations(sequences)
+        save_json(trigrams, f'{text}/trigrams.json')
+
+        similar_glyphs, percentages = get_similar_glyphs(sequences)
+        save_json(percentages, f'{text}/percentages.json')
+
+        vectorized_text, vectorizer = vectorize(encoded_data)
+        bkpts = plot_breakpoints(vectorized_text, [1, 2], os.path.join(RESULTS_DIR, f'{text}/breakpoints.png'))
+
+        glyphs = save_glyphs(vectorized_text, vectorizer, bkpts)
+        save_json(glyphs, f'{text}/glyphs.json')
+
+        clustered_glyphs, dispersed_glyphs = analyze_glyphs(encoded_data)
+        plot_discourse(clustered_glyphs, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/discourse.png'))
+
+        XY = [(trigram[0][0], trigram[0][2]) for trigram in trigrams]
+        search_results = search_glyphs(XY)
+        save_json(search_results, f'{text}/search_results.json')
 
 
 if __name__ == '__main__':
