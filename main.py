@@ -18,7 +18,7 @@ def save_json(data, file_name):
 
 
 def main():
-    for text in ['I', 'Gv']:
+    for text in ['I', 'Gv', 'T']:
         os.makedirs(os.path.join(RESULTS_DIR, text), exist_ok=True)
         raw_data = load_file(f'data/{text}.csv')
         clean_data = clean_lines(raw_data)
@@ -31,7 +31,7 @@ def main():
         trigrams = get_trigram_collocations(sequences)
         save_json(trigrams, f'{text}/trigrams.json')
 
-        similar_glyphs, percentages = get_similar_glyphs(sequences)
+        _, percentages = get_similar_glyphs(sequences)
         save_json(percentages, f'{text}/percentages.json')
 
         vectorized_text, vectorizer = vectorize(encoded_data)
@@ -40,8 +40,12 @@ def main():
         glyphs = save_glyphs(vectorized_text, vectorizer, bkpts)
         save_json(glyphs, f'{text}/glyphs.json')
 
-        clustered_glyphs, dispersed_glyphs = analyze_glyphs(encoded_data)
+        clustered_glyphs, _ = analyze_glyphs(encoded_data)
         plot_discourse(clustered_glyphs, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/discourse.png'))
+
+        trigrams_formatted = [[f'{trigram[0][0]}.76', trigram[0][2]] for trigram in trigrams]
+        clustered_trigrams, _ = analyze_glyphs(trigrams_formatted)
+        plot_discourse(clustered_trigrams, trigrams_formatted, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/trigram_discourse.png'))
 
         XY = [(trigram[0][0], trigram[0][2]) for trigram in trigrams]
         search_results = search_glyphs(XY)

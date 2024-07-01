@@ -3,8 +3,12 @@ from scipy.stats import norm
 
 
 def glyph_indices(glyph, text):
-    return [i for i, gl in enumerate(text) if gl == glyph]
-
+    # glyph is a list of lists
+    res = []
+    for i in range(len(text) - len(glyph) + 1):
+        if glyph == text[i:i + len(glyph)]:
+            res.append(i)
+    return res
 
 def nearest_neighbor_analysis_1d(points, length, alpha=0.05):
     n_points = len(points)
@@ -31,11 +35,12 @@ def nearest_neighbor_analysis_1d(points, length, alpha=0.05):
 
 def glyph_bound(glyph, text):
     start = end = None
-    for i in range(len(text)):
-        if glyph in text[i]:
-            if start is None:
-                start = i
-            end = i
+    for i, line in enumerate(text):
+        for j in range(len(line) - len(glyph) + 1):
+            if glyph == line[j:j + len(glyph)]:
+                if start is None:
+                    start = i
+                end = i
     return (start, end)
 
 
@@ -44,6 +49,7 @@ def analyze_glyphs(encoded_lines, min_count=4):
     for line in encoded_lines:
         text.extend(line)
     unique_glyphs = {glyph for glyph in text if glyph != '?' and text.count(glyph) >= min_count}
+    unique_glyphs = [[glyph] for glyph in unique_glyphs]
     clustered = []
     dispersed = []
 
@@ -56,7 +62,7 @@ def analyze_glyphs(encoded_lines, min_count=4):
             dispersed.append(glyph)
 
     clustered_sorted = sorted(clustered, key=lambda x: glyph_bound(x, encoded_lines))
-    clustered_formatted = [[glyph] for glyph in clustered_sorted]
+    # clustered_formatted = [[glyph] for glyph in clustered_sorted]
 
-    return clustered_formatted, dispersed
+    return clustered_sorted, dispersed
 
