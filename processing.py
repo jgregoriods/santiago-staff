@@ -41,6 +41,6 @@ def split_sequences(lines):
     for sequence in sequences:
         sequence[0] = sequence[0][:-3]
         sequence.insert(1, '<76>')
-    sequences = [seq for seq in sequences if len(seq) >= 4 and seq[0] and '?' not in seq]
-    return sequences
+    filtered_sequences = [seq for seq in sequences if seq[0] and len(seq) >= 4]
+    return sequences, filtered_sequences
 

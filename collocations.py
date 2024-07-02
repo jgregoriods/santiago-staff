@@ -16,16 +16,16 @@ def get_collocations(sequences, ngram_finder_class, assoc_measures_class, ngram_
 
 def get_bigram_collocations(sequences):
     bigram_filters = [
-        lambda *w: w[1] != '<76>' or w[0] == '?',
-        lambda *w: w[0] != '<76>',
-        lambda *w: w[-1] != '</s>'
+        lambda *w: w[1] != '<76>' or '?' in w[0],
+        lambda *w: w[0] != '<76>' or '?' in w[1],
+        lambda *w: w[-1] != '</s>' or '?' in w[0]
     ]
     return get_collocations(sequences, BigramCollocationFinder, BigramAssocMeasures, bigram_filters)
 
 
 def get_trigram_collocations(sequences):
     trigram_filters = [
-            lambda *w: w[1] != '<76>' or w[0] == '?'
+            lambda *w: w[1] != '<76>' or '?' in w[0] or '?' in w[2],
         ]
     return get_collocations(sequences, TrigramCollocationFinder, TrigramAssocMeasures, trigram_filters)
 

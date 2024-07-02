@@ -23,7 +23,7 @@ def main():
         raw_data = load_file(f'data/{text}.csv')
         clean_data = clean_lines(raw_data)
         encoded_data = encode_lines(clean_data)
-        sequences = split_sequences(encoded_data)
+        _, sequences = split_sequences(encoded_data)
 
         bigrams = get_bigram_collocations(sequences)
         save_json(bigrams, f'{text}/bigrams.json')
