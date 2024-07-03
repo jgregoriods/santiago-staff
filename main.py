@@ -3,7 +3,7 @@ import json
 from segmentation import vectorize, save_glyphs, plot_breakpoints
 from collocations import get_bigram_collocations, get_trigram_collocations, get_similar_glyphs
 from processing import load_file, clean_lines, encode_lines, split_sequences
-from nearest_neighbor import analyze_glyphs
+from nearest_neighbor import analyze_glyphs, glyph_bound
 from discourse import plot_discourse
 from search import search_glyphs
 
@@ -44,8 +44,8 @@ def main():
         plot_discourse(clustered_glyphs, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/discourse.png'))
 
         trigrams_formatted = [[f'{trigram[0][0]}.76', trigram[0][2]] for trigram in trigrams]
-        clustered_trigrams, _ = analyze_glyphs(trigrams_formatted)
-        plot_discourse(clustered_trigrams, trigrams_formatted, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/trigram_discourse.png'))
+        trigrams_sorted = sorted(trigrams_formatted, key=lambda x: glyph_bound(x, encoded_data))
+        plot_discourse(trigrams_sorted, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/trigram_discourse.png'))
 
         XY = [(trigram[0][0], trigram[0][2]) for trigram in trigrams]
         search_results = search_glyphs(XY)
