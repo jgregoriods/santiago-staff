@@ -2,7 +2,7 @@ from nltk.collocations import BigramAssocMeasures, BigramCollocationFinder, Trig
 from nltk.lm.preprocessing import pad_both_ends
 
 
-def get_collocations(sequences, ngram_finder_class, assoc_measures_class, ngram_filters, top_n=10):
+def get_collocations(sequences, ngram_finder_class, assoc_measures_class, ngram_filters, measure='likelihood_ratio', top_n=10):
     padded = [list(pad_both_ends(sequence, 2)) for sequence in sequences]
     collocation_measures = assoc_measures_class()
     results = []
@@ -10,24 +10,27 @@ def get_collocations(sequences, ngram_finder_class, assoc_measures_class, ngram_
         finder = ngram_finder_class.from_documents(padded)
         finder.apply_freq_filter(2)
         finder.apply_ngram_filter(ngram_filter)
-        results.extend(finder.score_ngrams(collocation_measures.likelihood_ratio)[:top_n])
+        if measure == 'likelihood_ratio':
+            results.extend(finder.score_ngrams(collocation_measures.likelihood_ratio)[:top_n])
+        elif measure == 'frequency':
+            results.extend(finder.ngram_fd.most_common(top_n))
     return results
 
 
-def get_bigram_collocations(sequences, top_n=10):
+def get_bigram_collocations(sequences, measure='likelihood_ratio', top_n=10):
     bigram_filters = [
         lambda *w: w[1] != '<76>' or '?' in w[0],
         lambda *w: w[0] != '<76>' or '?' in w[1],
         lambda *w: w[-1] != '</s>' or '?' in w[0]
     ]
-    return get_collocations(sequences, BigramCollocationFinder, BigramAssocMeasures, bigram_filters, top_n)
+    return get_collocations(sequences, BigramCollocationFinder, BigramAssocMeasures, bigram_filters, measure, top_n)
 
 
-def get_trigram_collocations(sequences, top_n=10):
+def get_trigram_collocations(sequences, measure='likelihood_ratio', top_n=10):
     trigram_filters = [
-            lambda *w: w[1] != '<76>' or '?' in w[0] or '?' in w[2],
-        ]
-    return get_collocations(sequences, TrigramCollocationFinder, TrigramAssocMeasures, trigram_filters, top_n)
+        lambda *w: w[1] != '<76>' or '?' in w[0] or '?' in w[2],
+    ]
+    return get_collocations(sequences, TrigramCollocationFinder, TrigramAssocMeasures, trigram_filters, measure, top_n)
 
 
 def is_similar(glyph1, glyph2):

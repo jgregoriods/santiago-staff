@@ -1,6 +1,6 @@
 import os
 import json
-from segmentation import vectorize, save_glyphs, plot_breakpoints
+from segmentation import vectorize, get_distinctive_glyphs, plot_breakpoints, segment_text
 from collocations import get_bigram_collocations, get_trigram_collocations, get_similar_glyphs
 from processing import load_file, clean_lines, encode_lines, split_sequences
 from nearest_neighbor import analyze_glyphs, glyph_bound
@@ -18,38 +18,66 @@ def save_json(data, file_name):
 
 
 def main():
-    for text in ['I', 'Gv', 'T']:
-        os.makedirs(os.path.join(RESULTS_DIR, text), exist_ok=True)
-        raw_data = load_file(f'data/{text}.csv')
-        clean_data = clean_lines(raw_data)
-        encoded_data = encode_lines(clean_data)
-        _, sequences = split_sequences(encoded_data)
+    # Santiago Staff
+    os.makedirs(os.path.join(RESULTS_DIR, "I"), exist_ok=True)
+    raw_data = load_file(f'data/I.csv')
+    clean_data = clean_lines(raw_data)
+    encoded_data = encode_lines(clean_data)
+    _, sequences = split_sequences(encoded_data)
 
-        bigrams = get_bigram_collocations(sequences)
-        save_json(bigrams, f'{text}/bigrams.json')
+    bigrams = get_bigram_collocations(sequences)
+    save_json(bigrams, f'I/bigrams.json')
+    bigrams_by_frequency = get_bigram_collocations(sequences, measure='frequency')
+    save_json(bigrams_by_frequency, f'I/bigrams_freq.json')
 
-        trigrams = get_trigram_collocations(sequences)
-        save_json(trigrams, f'{text}/trigrams.json')
+    trigrams = get_trigram_collocations(sequences)
+    save_json(trigrams, f'I/trigrams.json')
+    trigrams_by_frequency = get_trigram_collocations(sequences, measure='frequency')
+    save_json(trigrams_by_frequency, f'I/trigrams_freq.json')
 
-        _, percentages = get_similar_glyphs(sequences)
-        save_json(percentages, f'{text}/percentages.json')
+    _, percentages = get_similar_glyphs(sequences)
+    save_json(percentages, f'I/percentages.json')
 
-        vectorized_text, vectorizer = vectorize(encoded_data)
-        bkpts = plot_breakpoints(vectorized_text, [1, 2], os.path.join(RESULTS_DIR, f'{text}/breakpoints.png'))
+    vectorized_text, vectorizer = vectorize(encoded_data)
+    bkpts = plot_breakpoints(vectorized_text, [1, 2], os.path.join(RESULTS_DIR, f'I/breakpoints.png'))
 
-        glyphs = save_glyphs(vectorized_text, vectorizer, bkpts)
-        save_json(glyphs, f'{text}/glyphs.json')
+    segmented_text = segment_text(encoded_data, bkpts[0])
+    glyphs = get_distinctive_glyphs(segmented_text)
+    save_json(glyphs, f'I/glyphs.json')
 
-        clustered_glyphs, _ = analyze_glyphs(encoded_data)
-        plot_discourse(clustered_glyphs, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/discourse.png'))
+    clustered_glyphs, _ = analyze_glyphs(encoded_data)
+    plot_discourse(clustered_glyphs, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'I/discourse.png'))
 
-        trigrams_formatted = [[f'{trigram[0][0]}.76', trigram[0][2]] for trigram in trigrams]
-        trigrams_sorted = sorted(trigrams_formatted, key=lambda x: glyph_bound(x, encoded_data))
-        plot_discourse(trigrams_sorted, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'{text}/trigram_discourse.png'))
+    trigrams_formatted = [[f'{trigram[0][0]}.76', trigram[0][2]] for trigram in trigrams]
+    trigrams_sorted = sorted(trigrams_formatted, key=lambda x: glyph_bound(x, encoded_data))
+    plot_discourse(trigrams_sorted, encoded_data, bkpt=bkpts[0][0], save_path=os.path.join(RESULTS_DIR, f'I/trigram_discourse.png'))
 
-        XY = [(trigram[0][0], trigram[0][2]) for trigram in trigrams]
-        search_results = search_glyphs(XY)
-        save_json(search_results, f'{text}/search_results.json')
+    XY = [(trigram[0][0], trigram[0][2]) for trigram in trigrams + trigrams_by_frequency]
+    search_results = search_glyphs(XY)
+    save_json(search_results, f'I/search_results.json')
+
+    # Gv
+    os.makedirs(os.path.join(RESULTS_DIR, "Gv"), exist_ok=True)
+    raw_data = load_file(f'data/Gv.csv')
+    clean_data = clean_lines(raw_data)
+    encoded_data = encode_lines(clean_data)
+    _, sequences = split_sequences(encoded_data)
+
+    bigrams = get_bigram_collocations(sequences)
+    save_json(bigrams, f'Gv/bigrams.json')
+
+    _, percentages = get_similar_glyphs(sequences)
+    save_json(percentages, f'Gv/percentages.json')
+
+    # T
+    os.makedirs(os.path.join(RESULTS_DIR, "T"), exist_ok=True)
+    raw_data = load_file(f'data/T.csv')
+    clean_data = clean_lines(raw_data)
+    encoded_data = encode_lines(clean_data)
+    _, sequences = split_sequences(encoded_data)
+
+    bigrams = get_bigram_collocations(sequences)
+    save_json(bigrams, f'T/bigrams.json')
 
 
 if __name__ == '__main__':

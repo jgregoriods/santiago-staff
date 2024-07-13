@@ -5,26 +5,37 @@ import ruptures as rpt
 from matplotlib.colors import LogNorm
 from ruptures.base import BaseCost
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 
-def vectorize(lines):
+def vectorize(lines, vectorizer_class=CountVectorizer):
     line_str = [' '.join(line) for line in lines]
-    vectorizer = TfidfVectorizer(analyzer="word", token_pattern = '[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
+    # vectorizer = TfidfVectorizer(analyzer="word", token_pattern = '[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
+    vectorizer = CountVectorizer(analyzer="word", token_pattern='[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
     vectorized_text = vectorizer.fit_transform(line_str)
     return vectorized_text, vectorizer
 
 
-def save_glyphs(vectorized_text, vectorizer, breakpoints):
+def segment_text(encoded_text, breakpoints):
+    breakpoints = [0] + breakpoints
+    segments = []
+    for i in range(len(breakpoints) - 1):
+        segments.append(' '.join([' '.join(encoded_text[j]) for j in range(breakpoints[i], breakpoints[i + 1])]))
+    return segments
+
+
+def get_distinctive_glyphs(segmented_text, top_n=10):
+    vectorizer = TfidfVectorizer(analyzer="word", token_pattern='[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
+    vectorized_text = vectorizer.fit_transform(segmented_text)
     feature_names = vectorizer.get_feature_names_out()
-    X = vectorized_text.toarray()
-    distinctive_glyphs = []
-    for bkpt in breakpoints:
-        indices = [0] + bkpt
-        for i in range(len(indices) - 1):
-            best_features = np.argmax(X[indices[i]:indices[i+1], :], axis=1)
-            distinctive_glyphs.append(feature_names[list(set(best_features))].tolist())
-    return distinctive_glyphs
+    distinctive_features = []
+    for i in range(vectorized_text.shape[0]):
+        tfidf_scores = vectorized_text[i].toarray().flatten()
+        feature_score_pairs = list(zip(feature_names, tfidf_scores))
+        sorted_features = sorted(feature_score_pairs, key=lambda x: x[1], reverse=True)
+        sorted_feature_names = [feature for feature, score in sorted_features if score > 0]
+        distinctive_features.append(sorted_feature_names[:top_n])
+    return distinctive_features
 
 
 class CosineCost(BaseCost):
