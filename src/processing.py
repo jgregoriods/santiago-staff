@@ -1,4 +1,4 @@
-from horley_encoding import convert_to_horley
+from .horley_encoding import convert_to_horley
 
 
 def load_file(file_path):

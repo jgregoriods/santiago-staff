@@ -1,4 +1,4 @@
 *.odt
 .ipynb_checkpoints/
 __pycache__/
-make_tables.py
+src/make_tables.py

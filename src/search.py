@@ -1,6 +1,6 @@
 import os
 import re
-from horley_encoding import convert_to_horley
+from .horley_encoding import convert_to_horley
 
 
 all_texts = {}
@@ -22,7 +22,7 @@ def search_glyphs(glyph_list):
     for glyphs in glyph_list:
         results[glyphs] = []
         for line in all_texts:
-            pattern = fr"\b{'(.)'.join(glyphs)}\b"
+            pattern = fr"(?<!\.)\b{' '.join(glyphs)}\b(?!\.)"
             matches = re.findall(pattern, all_texts[line])
             if matches:
                 results[glyphs].append(line)
