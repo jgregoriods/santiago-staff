@@ -10,7 +10,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 def vectorize(lines, vectorizer_class=CountVectorizer):
     line_str = [' '.join(line) for line in lines]
-    # vectorizer = TfidfVectorizer(analyzer="word", token_pattern = '[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
     vectorizer = CountVectorizer(analyzer="word", token_pattern='[0-9]+[a-zAZ]*[.0-9]*[a-zAZ]*')
     vectorized_text = vectorizer.fit_transform(line_str)
     return vectorized_text, vectorizer
@@ -37,31 +36,20 @@ def get_distinctive_glyphs(segmented_text, top_n=10):
         distinctive_features.append(sorted_feature_names[:top_n])
     return distinctive_features
 
+# The following class and function are adapted from the example provided in the ruptures documentation:
+# https://centre-borelli.github.io/ruptures-docs/examples/text-segmentation/
+# by Oliver Boulant and Charles Truong
 
 class CosineCost(BaseCost):
-    """Cost derived from the cosine similarity."""
-
-    # The 2 following attributes must be specified for compatibility.
     model = "custom_cosine"
     min_size = 2
 
     def fit(self, signal):
-        """Set the internal parameter."""
         self.signal = signal
         self.gram = cosine_similarity(signal, dense_output=False)
         return self
 
     def error(self, start, end) -> float:
-        """Return the approximation cost on the segment [start:end].
-
-        Args:
-            start (int): start of the segment
-            end (int): end of the segment
-        Returns:
-            segment cost
-        Raises:
-            NotEnoughPoints: when the segment is too short (less than `min_size` samples).
-        """
         if end - start < self.min_size:
             raise NotEnoughPoints
         sub_gram = self.gram[start:end, start:end]
@@ -71,7 +59,6 @@ class CosineCost(BaseCost):
 
 
 def draw_square_on_ax(start, end, ax, linewidth=1.2, color="black"):
-    """Draw a square on the given ax object."""
     ax.vlines(
         x=[start - 0.5, end - 0.5],
         ymin=start - 0.5,
@@ -90,7 +77,6 @@ def draw_square_on_ax(start, end, ax, linewidth=1.2, color="black"):
 
 
 def plot_breakpoints(vectorized_text, n_bkps, save_path=None):
-    """Plot the breakpoints of the given text."""
     X = vectorized_text.toarray()
     algo = rpt.Dynp(custom_cost=CosineCost(), min_size=1, jump=2).fit(X)
 
