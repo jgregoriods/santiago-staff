@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-def plot_discourse(glyphs, encoded_lines, bkpt=None, save_path=None):
+def plot_discourse(glyphs, encoded_lines, bkpt=None, figsize=(8, 6), save_path=None):
     x_coords = []
     y_coords = []
     y = 0
@@ -17,7 +17,7 @@ def plot_discourse(glyphs, encoded_lines, bkpt=None, save_path=None):
                 y_coords.append(y)
         y -= 1
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=figsize)
     ax.scatter(x_coords, y_coords, color='black', s=10)
     ax.set_xlim(0, len(text))
     ax.set_yticks(range(0, y, -1))

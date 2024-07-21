@@ -48,7 +48,7 @@ def analyze_glyphs(encoded_lines, min_count=4):
     text = []
     for line in encoded_lines:
         text.extend(line)
-    unique_glyphs = {glyph for glyph in text if glyph != '?' and text.count(glyph) >= min_count}
+    unique_glyphs = {glyph for glyph in text if '?' not in glyph and text.count(glyph) >= min_count}
     unique_glyphs = [[glyph] for glyph in unique_glyphs]
     clustered = []
     dispersed = []
