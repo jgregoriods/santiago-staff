@@ -18,7 +18,8 @@ def clean_line(line):
         "128": "001V.076",
         "-999": "",
         ".076.": ".076-",
-        "-022h-": "-"
+        "-022h-": "-",
+        "-021h-": "-"
     }
     for old, new in replacements.items():
         line = line.replace(old, new)
