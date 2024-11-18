@@ -30,7 +30,7 @@ def plot_discourse(glyphs, encoded_lines, bkpt=None, figsize=(8, 6), save_path=N
         ax.axvspan(break_x, len(text), color='gray', alpha=0.1)
 
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight')
+        plt.savefig(save_path, bbox_inches='tight', dpi=300)
     else:
         plt.show()
 

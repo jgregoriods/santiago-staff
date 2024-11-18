@@ -111,7 +111,7 @@ def plot_breakpoints(vectorized_text, n_bkps, save_path=None):
     plt.tight_layout()
 
     if save_path is not None:
-        plt.savefig(save_path)
+        plt.savefig(save_path, dpi=300)
     else:
         plt.show()
 
