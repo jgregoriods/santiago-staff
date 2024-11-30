@@ -58,7 +58,7 @@ class CosineCost(BaseCost):
         return val
 
 
-def draw_square_on_ax(start, end, ax, linewidth=1.2, color="black"):
+def draw_square_on_ax(start, end, ax, linewidth=1.2, color="white"):
     ax.vlines(
         x=[start - 0.5, end - 0.5],
         ymin=start - 0.5,
@@ -83,7 +83,8 @@ def plot_breakpoints(vectorized_text, n_bkps, save_path=None):
     num_cols = min(len(n_bkps), 2)
     num_rows = (len(n_bkps) + num_cols - 1) // num_cols
 
-    fig, axes = plt.subplots(num_rows, num_cols)
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows))
+    fig.subplots_adjust(right=0.85)
 
     if len(n_bkps) > 1:
         axes = axes.flatten()
@@ -95,20 +96,24 @@ def plot_breakpoints(vectorized_text, n_bkps, save_path=None):
         predicted_bkps = algo.predict(n_bkps=n)
         res.append(predicted_bkps)
 
-        title_fontsize = 16
+        title_fontsize = 12
         ax = axes[idx]
-        ax.imshow(algo.cost.gram, cmap="viridis", norm=LogNorm(), interpolation="none")
+        im = ax.imshow(algo.cost.gram, cmap="viridis", norm=LogNorm(), interpolation="none")
+
         for start, end in rpt.utils.pairwise([0] + predicted_bkps):
             draw_square_on_ax(start=start, end=end, ax=ax, color="white")
-        ax.set_title(f"n={n}", fontsize=title_fontsize)
+        ax.set_title(f"n breakpoints={n}", fontsize=title_fontsize)
         ax.set_xticks([i for i in range(X.shape[0])])
         ax.set_xticklabels([i + 1 for i in range(X.shape[0])])
         ax.set_yticks([i for i in range(X.shape[0])])
         ax.set_yticklabels([i + 1 for i in range(X.shape[0])])
         ax.set_xlabel("line")
         ax.set_ylabel("line")
-
-    plt.tight_layout()
+        # Add a single colorbar to the figure
+    cbar_ax = fig.add_axes([0.9, 0.25, 0.03, 0.5])  # Adjust position as needed
+    clb = plt.colorbar(im, cax=cbar_ax)
+    clb.set_label("Cosine similarity", rotation=90, labelpad=-80)
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
 
     if save_path is not None:
         plt.savefig(save_path, dpi=300)
